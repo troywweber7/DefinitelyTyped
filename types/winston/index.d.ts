@@ -7,7 +7,7 @@
 
 /// <reference types="node" />
 
-import {Agent} from 'http';
+import { Agent } from 'http';
 
 declare namespace winston {
     interface AbstractConfigSetLevels {
@@ -277,7 +277,7 @@ declare namespace winston {
         json: boolean;
         colorize: boolean;
         prettyPrint: boolean;
-        timestamp: boolean;
+        timestamp: boolean | (() => string | boolean);
         showLevel: boolean;
         label: string|null;
         logstash: boolean;
@@ -304,7 +304,7 @@ declare namespace winston {
         maxFiles: number|null;
         prettyPrint: boolean;
         label: string|null;
-        timestamp: boolean;
+        timestamp: boolean | (() => string | boolean);
         eol: string;
         tailable: boolean;
         depth: string|null;
@@ -335,7 +335,7 @@ declare namespace winston {
         json: boolean;
         colorize: boolean;
         prettyPrint: boolean;
-        timestamp: boolean;
+        timestamp: boolean | (() => string | boolean);
         showLevel: boolean;
         label: string|null;
         depth: string|null;
@@ -400,7 +400,7 @@ declare namespace winston {
         label?: string;
         depth?: number;
 
-        timestamp?(): any | boolean;
+        timestamp?: boolean | (() => string | boolean);
         stringify?(obj: any): string;
     }
 
