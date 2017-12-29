@@ -1,7 +1,9 @@
 // Type definitions for mocha 2.2.5
 // Project: http://mochajs.org/
-// Definitions by: Kazi Manzur Rashid <https://github.com/kazimanzurrashid/>, otiai10 <https://github.com/otiai10>, jt000 <https://github.com/jt000>, Vadim Macagon <https://github.com/enlight>
+// Definitions by: Kazi Manzur Rashid <https://github.com/kazimanzurrashid>, otiai10 <https://github.com/otiai10>, jt000 <https://github.com/jt000>, Vadim Macagon <https://github.com/enlight>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
+
+/// <reference types="node" />
 
 interface MochaSetupOptions {
     //milliseconds to wait before considering a test slow
@@ -17,7 +19,7 @@ interface MochaSetupOptions {
     globals?: any[];
 
     // reporter instance (function or string), defaults to `mocha.reporters.Spec`
-    reporter?: any;
+    reporter?: string | ReporterConstructor;
 
     // bail on the first test failure
     bail?: boolean;
@@ -27,6 +29,9 @@ interface MochaSetupOptions {
 
     // grep string or regexp to filter tests with
     grep?: any;
+    
+    // require modules before running tests
+    require?: string[];
 }
 
 declare var mocha: Mocha;
@@ -62,12 +67,16 @@ declare function beforeEach(description: string, callback: (this: Mocha.IBeforeA
 declare function afterEach(callback: (this: Mocha.IBeforeAndAfterContext, done: MochaDone) => any): void;
 declare function afterEach(description: string, callback: (this: Mocha.IBeforeAndAfterContext, done: MochaDone) => any): void;
 
+interface ReporterConstructor {
+    new(runner: Mocha.IRunner, options: any): any;
+}
+
 declare class Mocha {
     currentTest: Mocha.ITestDefinition;
     constructor(options?: {
         grep?: RegExp;
         ui?: string;
-        reporter?: string;
+        reporter?: string | ReporterConstructor;
         timeout?: number;
         reporterOptions?: any;
         slow?: number;
@@ -81,7 +90,7 @@ declare class Mocha {
     /** Sets reporter by name, defaults to "spec". */
     reporter(name: string): Mocha;
     /** Sets reporter constructor, defaults to mocha.reporters.Spec. */
-    reporter(reporter: (runner: Mocha.IRunner, options: any) => any): Mocha;
+    reporter(reporter: ReporterConstructor): Mocha;
     ui(value: string): Mocha;
     grep(value: string): Mocha;
     grep(value: RegExp): Mocha;
@@ -154,7 +163,7 @@ declare namespace Mocha {
     interface ITest extends IRunnable {
         parent: ISuite;
         pending: boolean;
-        state: 'failed'|'passed'|undefined;
+        state: 'failed' | 'passed' | undefined;
 
         fullTitle(): string;
     }
@@ -165,7 +174,7 @@ declare namespace Mocha {
 
 
     /** Partial interface for Mocha's `Runner` class. */
-    interface IRunner { }
+    interface IRunner extends NodeJS.EventEmitter { }
 
     interface IContextDefinition {
         (description: string, callback: (this: ISuiteCallbackContext) => void): ISuite;

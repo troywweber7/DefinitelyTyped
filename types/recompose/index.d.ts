@@ -1,4 +1,4 @@
-// Type definitions for Recompose 0.23
+// Type definitions for Recompose 0.24
 // Project: https://github.com/acdlite/recompose
 // Definitions by: Iskander Sierra <https://github.com/iskandersierra>
 //                 Samuel DeSota <https://github.com/mrapogee>
@@ -78,13 +78,13 @@ declare module 'recompose' {
 
     // withHandlers: https://github.com/acdlite/recompose/blob/master/docs/API.md#withhandlers
     type EventHandler = Function;
-    type HandleCreators<TOutter> = {
-        [handlerName: string]: mapper<TOutter, EventHandler>;
+    type HandleCreators<TOutter, THandlers> = {
+        [handlerName in keyof THandlers]: mapper<TOutter, EventHandler>;
     };
-    type HandleCreatorsFactory<TOutter, THandlers> = (initialProps: TOutter) => HandleCreators<TOutter>;
+    type HandleCreatorsFactory<TOutter, THandlers> = (initialProps: TOutter) => HandleCreators<TOutter, THandlers>;
     export function withHandlers<TOutter, THandlers>(
-        handlerCreators: HandleCreators<TOutter> | HandleCreatorsFactory<TOutter, THandlers>
-    ): InferableComponentEnhancerWithProps<THandlers, TOutter>;
+        handlerCreators: HandleCreators<TOutter, THandlers> | HandleCreatorsFactory<TOutter, THandlers>
+    ): InferableComponentEnhancerWithProps<TOutter & THandlers, TOutter>;
 
     // defaultProps: https://github.com/acdlite/recompose/blob/master/docs/API.md#defaultprops
     export function defaultProps<T = {}>(
@@ -131,6 +131,19 @@ declare module 'recompose' {
         stateProps<TState, TStateName, TStateUpdaterName>,
         TOutter
     >;
+
+    // withStateHandlers: https://github.com/acdlite/recompose/blob/master/docs/API.md#withstatehandlers
+    type StateHandler<TState> = (...payload: any[]) => TState | undefined;
+    type StateHandlerMap<TState> = {
+      [updaterName: string]: StateHandler<TState>;
+    };
+    type StateUpdaters<TOutter, TState, TUpdaters> = {
+      [updaterName in keyof TUpdaters]: (state: TState, props: TOutter) => StateHandler<TState>;
+    };
+    export function withStateHandlers<TState, TUpdaters extends StateHandlerMap<TState>, TOutter = {}>(
+      createProps: TState | mapper<TOutter, TState>,
+      stateUpdaters: StateUpdaters<TOutter, TState, TUpdaters>,
+    ): InferableComponentEnhancerWithProps<TOutter & TState & TUpdaters, TOutter>;
 
     // withReducer: https://github.com/acdlite/recompose/blob/master/docs/API.md#withReducer
     type reducer<TState, TAction> = (s: TState, a: TAction) => TState;
@@ -187,6 +200,10 @@ declare module 'recompose' {
     export function onlyUpdateForKeys(
         propKeys: Array<string>
     ) : InferableComponentEnhancer<{}>;
+    export function onlyUpdateForKeys<T>(
+        propKeys: Array<keyof T>
+    ) : InferableComponentEnhancer<{}>;
+
 
     // onlyUpdateForPropTypes: https://github.com/acdlite/recompose/blob/master/docs/API.md#onlyUpdateForPropTypes
     export const onlyUpdateForPropTypes: InferableComponentEnhancer<{}>;
@@ -202,7 +219,7 @@ declare module 'recompose' {
         contextTypes: ValidationMap<TContext>
     ) : InferableComponentEnhancer<TContext>;
 
-    interface ReactLifeCycleFunctionsThisArguments<TProps, TState> {
+    interface _ReactLifeCycleFunctionsThisArguments<TProps, TState> {
         props: TProps,
         state: TState,
         setState<TKeyOfState extends keyof TState>(f: (prevState: TState, props: TProps) => Pick<TState, TKeyOfState>, callback?: () => any): void;
@@ -214,20 +231,22 @@ declare module 'recompose' {
             [key: string]: React.ReactInstance
         };
     }
+    type ReactLifeCycleFunctionsThisArguments<TProps, TState, TInstance = {}> =
+        _ReactLifeCycleFunctionsThisArguments<TProps, TState> & TInstance
 
     // lifecycle: https://github.com/acdlite/recompose/blob/master/docs/API.md#lifecycle
-    interface ReactLifeCycleFunctions<TProps, TState> {
-        componentWillMount?: (this: ReactLifeCycleFunctionsThisArguments<TProps, TState>) => void;
-        componentDidMount?: (this: ReactLifeCycleFunctionsThisArguments<TProps, TState>) => void;
-        componentWillReceiveProps?: (this: ReactLifeCycleFunctionsThisArguments<TProps, TState>, nextProps: TProps) => void;
-        shouldComponentUpdate?: (this: ReactLifeCycleFunctionsThisArguments<TProps, TState>, nextProps: TProps, nextState: TState) => boolean;
-        componentWillUpdate?: (this: ReactLifeCycleFunctionsThisArguments<TProps, TState>, nextProps: TProps, nextState: TState) => void;
-        componentDidUpdate?: (this: ReactLifeCycleFunctionsThisArguments<TProps, TState>, prevProps: TProps, prevState: TState) => void;
-        componentWillUnmount?: (this: ReactLifeCycleFunctionsThisArguments<TProps, TState>) => void;
+    interface ReactLifeCycleFunctions<TProps, TState, TInstance = {}> {
+        componentWillMount?: (this: ReactLifeCycleFunctionsThisArguments<TProps, TState, TInstance>) => void;
+        componentDidMount?: (this: ReactLifeCycleFunctionsThisArguments<TProps, TState, TInstance>) => void;
+        componentWillReceiveProps?: (this: ReactLifeCycleFunctionsThisArguments<TProps, TState, TInstance>, nextProps: TProps) => void;
+        shouldComponentUpdate?: (this: ReactLifeCycleFunctionsThisArguments<TProps, TState, TInstance>, nextProps: TProps, nextState: TState) => boolean;
+        componentWillUpdate?: (this: ReactLifeCycleFunctionsThisArguments<TProps, TState, TInstance>, nextProps: TProps, nextState: TState) => void;
+        componentDidUpdate?: (this: ReactLifeCycleFunctionsThisArguments<TProps, TState, TInstance>, prevProps: TProps, prevState: TState) => void;
+        componentWillUnmount?: (this: ReactLifeCycleFunctionsThisArguments<TProps, TState, TInstance>) => void;
     }
 
-    export function lifecycle<TProps, TState>(
-        spec: ReactLifeCycleFunctions<TProps, TState>
+    export function lifecycle<TProps, TState, TInstance = {}>(
+        spec: ReactLifeCycleFunctions<TProps, TState, TInstance> & TInstance
     ): InferableComponentEnhancer<{}>;
 
     // toClass: https://github.com/acdlite/recompose/blob/master/docs/API.md#toClass
@@ -349,6 +368,10 @@ declare module 'recompose' {
         stream: TSubs;
     };
     export function createEventHandler<T, TSubs extends Subscribable<T>>(): EventHandlerOf<T, TSubs>;
+
+    // createEventHandlerWithConfig: https://github.com/acdlite/recompose/blob/master/docs/API.md#createEventHandlerWithConfig
+    export function createEventHandlerWithConfig(config: ObservableConfig):
+        <T, TSubs extends Subscribable<T>>() => EventHandlerOf<T, TSubs>;
 
     // setObservableConfig: https://github.com/acdlite/recompose/blob/master/docs/API.md#setObservableConfig
     type ObservableConfig = {
